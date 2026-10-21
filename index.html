@@ -97,6 +97,10 @@
         <!-- ZZ Games fix: keep the game filling the window after resizing / fullscreen -->
         <script>
             (function(){
+                // iPad / phones / touch screens: leave the game's original screen handling alone (it already works there).
+                var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                window.__rbTouch = touch;
+                if (touch) return;
                 // Make the game itself render at the window's size (sharp pixels, no stretching).
                 var lastW = 0, lastH = 0;
                 function resizeGame(){

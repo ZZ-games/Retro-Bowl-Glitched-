@@ -94,5 +94,18 @@
         <!-- Run the game code -->
         <script type="text/javascript" src="html5game/RetroBowl.js"></script>
         <script>window.onload = GameMaker_Init;</script>
+        <!-- ZZ Games fix: keep the game filling the window after resizing / fullscreen -->
+        <script>
+            (function(){
+                function fit(){
+                    var c = document.getElementById('canvas');
+                    if (!c || typeof _BV !== 'function') return;
+                    var w = window.innerWidth, h = window.innerHeight;
+                    if (c.width !== w || c.height !== h) _BV(w, h);
+                }
+                window.addEventListener('resize', function(){ setTimeout(fit, 0); });
+                setInterval(fit, 500);
+            })();
+        </script>
     </body>
 </html>

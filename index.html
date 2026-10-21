@@ -97,14 +97,42 @@
         <!-- ZZ Games fix: keep the game filling the window after resizing / fullscreen -->
         <script>
             (function(){
+                // Stretch the canvas (keeping its shape) to fill the window, whatever size the game set it to.
+                var scale = 1, offX = 0, offY = 0;
                 function fit(){
                     var c = document.getElementById('canvas');
-                    if (!c || typeof _BV !== 'function') return;
-                    var w = window.innerWidth, h = window.innerHeight;
-                    if (c.width !== w || c.height !== h) _BV(w, h);
+                    if (!c || !c.width || !c.height) return;
+                    var W = window.innerWidth, H = window.innerHeight;
+                    scale = Math.min(W / c.width, H / c.height);
+                    var w = Math.round(c.width * scale), h = Math.round(c.height * scale);
+                    offX = Math.round((W - w) / 2); offY = Math.round((H - h) / 2);
+                    var st = c.style, ws = w + 'px', hs = h + 'px', ls = offX + 'px', ts = offY + 'px';
+                    if (st.width !== ws || st.height !== hs || st.left !== ls || st.top !== ts || st.position !== 'fixed') {
+                        st.position = 'fixed'; st.width = ws; st.height = hs; st.left = ls; st.top = ts;
+                    }
                 }
-                window.addEventListener('resize', function(){ setTimeout(fit, 0); });
-                setInterval(fit, 500);
+                // The game reads pageX/pageY in canvas pixels, so convert screen positions back into canvas pixels.
+                function conv(o){
+                    if (!o || o.__rbFixed || scale === 1) return;
+                    var px = o.pageX, py = o.pageY;
+                    try {
+                        Object.defineProperty(o, 'pageX', { value: offX + (px - offX) / scale, configurable: true });
+                        Object.defineProperty(o, 'pageY', { value: offY + (py - offY) / scale, configurable: true });
+                        o.__rbFixed = true;
+                    } catch (e) {}
+                }
+                function onEvt(e){
+                    conv(e);
+                    var lists = [e.touches, e.changedTouches, e.targetTouches];
+                    for (var i = 0; i < lists.length; i++) {
+                        var l = lists[i]; if (!l) continue;
+                        for (var j = 0; j < l.length; j++) conv(l[j]);
+                    }
+                }
+                ['mousedown','mouseup','mousemove','click','dblclick','touchstart','touchmove','touchend','touchcancel','pointerdown','pointerup','pointermove']
+                    .forEach(function(t){ window.addEventListener(t, onEvt, { capture: true, passive: true }); });
+                window.addEventListener('resize', fit);
+                (function loop(){ fit(); requestAnimationFrame(loop); })();
             })();
         </script>
     </body>

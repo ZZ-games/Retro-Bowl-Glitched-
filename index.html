@@ -97,13 +97,29 @@
         <!-- ZZ Games fix: keep the game filling the window after resizing / fullscreen -->
         <script>
             (function(){
-                // Stretch the canvas (keeping its shape) to fill the window, whatever size the game set it to.
+                // Make the game itself render at the window's size (sharp pixels, no stretching).
+                var lastW = 0, lastH = 0;
+                function resizeGame(){
+                    var c = document.getElementById('canvas');
+                    if (!c || typeof _BV !== 'function') return;
+                    var W = window.innerWidth, H = window.innerHeight;
+                    if (window.__rbMatch) {
+                        if ((W !== lastW || H !== lastH) && typeof window.__rbResize === 'function') window.__rbResize();
+                    } else if (c.width !== W || c.height !== H) {
+                        _BV(W, H);
+                    }
+                    lastW = W; lastH = H;
+                }
+                window.addEventListener('resize', function(){ setTimeout(resizeGame, 50); });
+                setInterval(resizeGame, 500);
+
+                // Center the canvas; only shrink it if it is ever bigger than the window (never blur it by stretching).
                 var scale = 1, offX = 0, offY = 0;
                 function fit(){
                     var c = document.getElementById('canvas');
                     if (!c || !c.width || !c.height) return;
                     var W = window.innerWidth, H = window.innerHeight;
-                    scale = Math.min(W / c.width, H / c.height);
+                    scale = Math.min(1, W / c.width, H / c.height);
                     var w = Math.round(c.width * scale), h = Math.round(c.height * scale);
                     offX = Math.round((W - w) / 2); offY = Math.round((H - h) / 2);
                     var st = c.style, ws = w + 'px', hs = h + 'px', ls = offX + 'px', ts = offY + 'px';
